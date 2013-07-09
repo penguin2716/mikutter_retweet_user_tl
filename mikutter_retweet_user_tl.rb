@@ -12,23 +12,23 @@ Plugin.create :retweet_user_tl do
 
   on_retweet do |retweets|
     retweets.each do |message|
-      if message.retweet_source.user == Service.primary.user
-        @retweet_users[message.user.idname.to_sym] = Time.now 
+      if message.retweet_source.user.id == User.findbyidname(Service.primary.user).id
+        @retweet_users[message.user.id] = Time.now 
       end
     end
   end
 
   on_appear do |messages|
     messages.each do |message|
-      timeline(:retweet_user_tl) << message if @retweet_users[message.user.idname.to_sym]
+      timeline(:retweet_user_tl) << message if @retweet_users[message.user.id]
     end
   end
 
   on_period do
-    @retweet_users.each do |idname, time|
-      (Service.primary.twitter/'statuses/user_timeline').json(:screen_name => idname.to_s)
+    @retweet_users.each do |id, time|
+      Service.primary.user_timeline(user_id: id, include_rts: 1, count: [UserConfig[:profile_show_tweet_once], 200].min)
     end
-    @retweet_users.delete_if do |idname, time|
+    @retweet_users.delete_if do |id, time|
       Time.now - time >= 600
     end
   end
