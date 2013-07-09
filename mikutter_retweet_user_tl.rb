@@ -12,7 +12,9 @@ Plugin.create :retweet_user_tl do
 
   on_retweet do |retweets|
     retweets.each do |message|
-      @retweet_users[message.user.idname.to_sym] = Time.now
+      if message.retweet_source.user == Service.primary.user
+        @retweet_users[message.user.idname.to_sym] = Time.now 
+      end
     end
   end
 
