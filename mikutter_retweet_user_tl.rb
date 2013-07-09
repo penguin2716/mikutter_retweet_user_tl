@@ -4,6 +4,8 @@
 
 Plugin.create :retweet_user_tl do
   @retweet_users = {}
+  @imagemagick = system('which convert') and system('which composite')
+
 
   tab(:retweet_user_tl, "自分のツイートをRTしたユーザ") do
     set_icon File.expand_path(File.join(File.dirname(__FILE__), 'icon.png'))
@@ -31,6 +33,25 @@ Plugin.create :retweet_user_tl do
     @retweet_users.delete_if do |id, time|
       Time.now - time >= 600
     end
+
+    # 現在の監視ユーザをアイコン上に表示
+    if @imagemagick
+      Thread.new do
+        if @retweet_users.size > 0
+          `convert -size 144x144 xc:none -fill red -stroke red -draw "circle 72,72 72,5" -pointsize 102 -family monoscape -stroke white -strokewidth 10 -gravity center -fill white -draw "text 0,10 '#{@retweet_users.size < 100 ? @retweet_users.size : '00'}'" #{File.expand_path(File.join(File.dirname(__FILE__), 'user_count.png'))}`
+          `composite -geometry +110+0 #{File.expand_path(File.join(File.dirname(__FILE__), 'user_count.png'))} #{File.expand_path(File.join(File.dirname(__FILE__), 'icon.png'))} #{File.expand_path(File.join(File.dirname(__FILE__), 'composite.png'))}`
+
+          tab(:retweet_user_tl, "自分のツイートをRTしたユーザ（#{@retweet_users.size}）") do
+            set_icon File.expand_path(File.join(File.dirname(__FILE__), 'composite.png'))
+          end
+        else
+          tab(:retweet_user_tl, "自分のツイートをRTしたユーザ") do
+            set_icon File.expand_path(File.join(File.dirname(__FILE__), 'icon.png'))
+          end
+        end
+      end
+    end
+
   end
   
 end
